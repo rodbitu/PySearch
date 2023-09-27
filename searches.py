@@ -19,7 +19,8 @@ def calculate_euclidiana_distance(start, goal):
     x2, y2 = goal
 
     # Calcula a distância euclidiana
-    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    value = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    return {"value": value, "name": "euclidiana_distance"}
 
 
 def calculate_manhattan_distance(start, goal):
@@ -28,11 +29,13 @@ def calculate_manhattan_distance(start, goal):
     x2, y2 = goal
 
     # Calcula a distância de Manhattan
-    return abs(x2 - x1) + abs(y2 - y1)
+    value = abs(x2 - x1) + abs(y2 - y1)
+    return {"value": value, "name": "manhattan_distance"}
 
 
-def sucessores(start, goal, map):
-    descobertaAtual = []
+def exploration(start, goal, map, distance):
+    currentDiscovery = []
+    explored = []
 
     # Calculo da borda
     for data in queueOfStates:
@@ -46,45 +49,64 @@ def sucessores(start, goal, map):
 
     for dl in range(-1, 2):
         for dc in range(-1, 2):
-            if dl == 0 and dc == 0:
-                continue  # Ignorar a própria posição
+            if distance(start, goal)["name"] == "euclidiana_distance":
+                if dl == 0 and dc == 0:
+                    continue  # Ignorar a própria posição
 
             new_l, new_c = l + dl, c + dc
+            explored.append((new_l, new_c))
 
-            if is_valid_position(new_l, new_c):
-                if map[new_l][new_c] == 0 or (new_l, new_c) in edge:
+    if distance(start, goal)["name"] == "manhattan_distance":
+        explored = [value for indice, value in enumerate(explored) if indice % 2 != 0]
+
+    for pos in explored:
+        new_l, new_c = pos
+        if is_valid_position(new_l, new_c):
+            if map[new_l][new_c] == 0 or (new_l, new_c) in edge:
+                if (new_l, new_c) not in queueOfStates:
                     map[new_l][new_c] = 3000
-                    if (new_l, new_c) not in queueOfStates:
-                        queueOfStates.append((new_l, new_c))
+                    queueOfStates.append((new_l, new_c))
 
-                    if (new_l, new_c) not in closedList:
-                        descobertaAtual.append((new_l, new_c))
+                if (new_l, new_c) not in closedList:
+                    map[new_l][new_c] = 3000
+                    currentDiscovery.append((new_l, new_c))
 
-                if map[new_l][new_c] == 2000:
-                    print_map(map)
-                    print("Objetivo encontrado!")
-                    return
+            if map[new_l][new_c] == 2000:
+                print_map(map)
+                print("Objetivo encontrado!")
+                return True
 
     time.sleep(2)
     print_map(map)
     print()
-    buscaHeuristica(descobertaAtual, map, goal)
+    heuristicSearch(currentDiscovery, map, goal, distance)
 
 
 # Busca heurística gulosa
-def buscaHeuristica(descobertaAtual, map, goal):
+def heuristicSearch(currentDiscovery, map, goal, distance):
     distancias = []
 
-    print("Descoberta atual: ", descobertaAtual)
-    if len(descobertaAtual) > 0:
-        for pos in descobertaAtual:
-            print(math.floor(calculate_manhattan_distance(pos, goal)))
-            distancias.append(math.floor(calculate_manhattan_distance(pos, goal)))
+    if currentDiscovery == []:
+        print("Objetivo não encontrado!")
+        return False
+
+    print("Descoberta atual: ", currentDiscovery)
+    if len(currentDiscovery) > 0:
+        for pos in currentDiscovery:
+            distancias.append(math.floor(distance(pos, goal)["value"]))
 
         iDoMenorDist = distancias.index(min(distancias))
-        posMenorDist = descobertaAtual[iDoMenorDist]
+        posMenorDist = currentDiscovery[iDoMenorDist]
 
         print("Menor distância: ", posMenorDist)
         closedList.append(posMenorDist)
+        x, y = posMenorDist
+        map[x][y] = 4000
 
-        sucessores(posMenorDist, goal, map)
+        exploration(posMenorDist, goal, map, distance)
+
+# Inicializa a busca heurística gulosa com a distância euclidiana
+exploration(start, goal, map, calculate_euclidiana_distance)
+
+# Initializa a busca heurística gulosa com a distância de Manhattan
+exploration(start, goal, map, calculate_manhattan_distance)
