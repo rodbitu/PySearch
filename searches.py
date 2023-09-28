@@ -9,6 +9,7 @@ start
 queueOfStates = []  # Explorados
 closedList = []  # Percorrido
 edge = []  # Não percorrido mas explorado
+cost = 0 # Custo do caminho
 
 validate_points(start, goal)
 
@@ -73,6 +74,7 @@ def exploration(start, goal, map, distance):
 
             if map[new_l][new_c] == 2000:
                 print_map(map)
+                print("Custo: ", cost)
                 print("Objetivo encontrado!")
                 return True
 
@@ -97,13 +99,18 @@ def heuristicSearch(currentDiscovery, map, goal, distance):
 
         iDoMenorDist = distancias.index(min(distancias))
         posMenorDist = currentDiscovery[iDoMenorDist]
+        
+        global cost
+        cost  += min(distancias)
 
         print("Menor distância: ", posMenorDist)
         closedList.append(posMenorDist)
         x, y = posMenorDist
         map[x][y] = 4000
 
-        exploration(posMenorDist, goal, map, distance)
+        exploration(posMenorDist, goal, map, distance)      
+    
+
 
 # Inicializa a busca heurística gulosa com a distância euclidiana
 exploration(start, goal, map, calculate_euclidiana_distance)
